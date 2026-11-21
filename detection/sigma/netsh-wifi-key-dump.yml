@@ -1,0 +1,25 @@
+title: Wi-Fi Profile Key Access Via Netsh
+id: 2c9d5e7f-1a34-4b68-8f02-6d3e9c0a7b51
+status: experimental
+description: Detects netsh.exe reading a wireless profile with key=clear, which exposes the stored Wi-Fi password in clear text.
+references:
+  - https://attack.mitre.org/techniques/T1555/
+author: Eclipsemanic
+date: 2026-11-21
+tags:
+  - attack.credential-access
+  - attack.t1555
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_image:
+    Image|endswith: '\netsh.exe'
+  selection_args:
+    CommandLine|contains|all:
+      - 'wlan'
+      - 'key=clear'
+  condition: selection_image and selection_args
+falsepositives:
+  - An administrator manually recovering a Wi-Fi password on a machine they own
+level: high

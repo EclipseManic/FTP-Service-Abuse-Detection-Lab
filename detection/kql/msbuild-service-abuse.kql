@@ -1,0 +1,60 @@
+// Service installed with MSBuild in the binary path.
+// Defender XDR: DeviceEvents / Sentinel: SecurityEvent (EventID 7045 or 4697).
+SecurityEvent
+| where EventID in (7045, 4697)
+| where ServiceImagePath has "msbuild.exe" or ServiceImagePath has "cmd.exe /c start"
+| project TimeGenerated, Computer, EventID, ServiceName, ServiceImagePath,
+          AccountName = SubjectUserName
+| order by TimeGenerated desc
+
+// The process chain: services.exe -> cmd.exe -> msbuild.exe.
+DeviceProcessEvents
+| where FileName =~ "msbuild.exe"
+| where InitiatingProcessFileName in~ ("cmd.exe", "services.exe")
+| project Timestamp, DeviceName, AccountName, FileName, ProcessCommandLine,
+          InitiatingProcessFileName, InitiatingProcessCommandLine
+| order by Timestamp desc
+
+// msbuild.exe with a project file in a user temp directory.
+DeviceProcessEvents
+| where FileName =~ "msbuild.exe"
+| where ProcessCommandLine has_any ("\\Temp\\", "\\AppData\\Local\\Temp\\", ".proj")
+| project Timestamp, DeviceName, AccountName, ProcessCommandLine,
+          InitiatingProcessFileName
+| order by Timestamp desc
+
+// Wi-Fi profile key access.
+DeviceProcessEvents
+| where FileName =~ "netsh.exe"
+| where ProcessCommandLine has "wlan" and ProcessCommandLine has "key=clear"
+| project Timestamp, DeviceName, AccountName, ProcessCommandLine,
+          InitiatingProcessFileName
+| order by Timestamp desc
+
+// Outbound FTP from a workstation.
+DeviceNetworkEvents
+| where RemotePort == 21
+| where ActionType == "ConnectionSuccess"
+| project Timestamp, DeviceName, AccountName, RemoteIP, RemoteUrl,
+          InitiatingProcessFileName, InitiatingProcessCommandLine
+| order by Timestamp desc
+
+// Correlate the service install and the process chain on the same host.
+let LookbackWindow = 10m;
+let ServiceInstall =
+    SecurityEvent
+    | where EventID in (7045, 4697)
+    | where ServiceImagePath has "msbuild.exe"
+    | project InstallTime = TimeGenerated, Computer, ServiceName, ServiceImagePath;
+let MsBuildChain =
+    DeviceProcessEvents
+    | where FileName =~ "msbuild.exe"
+    | where InitiatingProcessFileName in~ ("cmd.exe", "services.exe")
+    | project ProcessTime = Timestamp, DeviceName, ProcessCommandLine,
+              InitiatingProcessFileName;
+ServiceInstall
+| join kind=innerunique MsBuildChain on $left.Computer == $right.DeviceName
+| where ProcessTime between (InstallTime .. (InstallTime + LookbackWindow))
+| project InstallTime, ProcessTime, Computer, ServiceName, ServiceImagePath,
+          ProcessCommandLine, InitiatingProcessFileName
+| order by InstallTime desc
