@@ -1,0 +1,16 @@
+# Lab output and recordings
+artifacts/
+*.log
+*.tmp
+*.mp4
+*.mkv
+
+# Local settings and secrets
+.env
+*.local.ps1
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

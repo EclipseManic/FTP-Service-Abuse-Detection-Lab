@@ -1,0 +1,27 @@
+title: Service Installed With MSBuild Binary Path
+id: 8f3c2b1a-4d7e-4a91-9c6b-2e5f0d7a1b34
+status: experimental
+description: Detects a Windows service whose image path launches msbuild.exe, a rare pattern consistent with proxy execution hidden behind a service.
+references:
+  - https://attack.mitre.org/techniques/T1543/003/
+  - https://attack.mitre.org/techniques/T1127/
+author: Eclipsemanic
+date: 2026-11-21
+tags:
+  - attack.privilege-escalation
+  - attack.persistence
+  - attack.defense-evasion
+  - attack.t1543.003
+  - attack.t1127
+logsource:
+  product: windows
+  service: system
+detection:
+  selection_event:
+    EventID: 7045
+  selection_msbuild:
+    ImagePath|contains: 'msbuild.exe'
+  condition: selection_event and selection_msbuild
+falsepositives:
+  - A build server that deliberately installs MSBuild as a service
+level: high
