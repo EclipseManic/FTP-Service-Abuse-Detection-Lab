@@ -2,6 +2,7 @@
 
 **A defensive lab for MSBuild inline-C# proxy execution hidden behind a Windows service.**
 
+[![Validate](https://github.com/EclipseManic/service-abuse-detection-lab/actions/workflows/validate.yml/badge.svg)](https://github.com/EclipseManic/service-abuse-detection-lab/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 This repository walks through one attack chain end to end — a Windows service

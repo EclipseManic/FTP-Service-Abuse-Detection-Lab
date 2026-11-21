@@ -1,0 +1,79 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  powershell:
+    name: PowerShell
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse and smoke-run scripts
+        shell: pwsh
+        run: |
+          $files = @(
+            "tools/FTP-Utility.ps1",
+            "simulation/Invoke-ServiceAbuseWalkthrough.ps1"
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file).Path, [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$file`: $($_.Message)" }
+              exit 1
+            }
+            Write-Host "Parsed $file"
+          }
+          ./simulation/Invoke-ServiceAbuseWalkthrough.ps1 | Out-Null
+          Write-Host "Walkthrough completed without error"
+
+  rules:
+    name: Detection rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: python -m pip install --disable-pip-version-check pyyaml
+
+      - name: Validate Sigma and KQL content
+        run: |
+          python - <<'PY'
+          import glob
+          import sys
+          import yaml
+
+          paths = sorted(glob.glob("detection/sigma/*.yml"))
+          if not paths:
+              sys.exit("No Sigma rules found")
+
+          for path in paths:
+              with open(path, encoding="utf-8") as handle:
+                  rule = yaml.safe_load(handle)
+              if not isinstance(rule, dict) or "detection" not in rule:
+                  sys.exit(f"{path}: missing detection block")
+              print(f"{path}: {rule.get('title', 'untitled')}")
+
+          queries = sorted(glob.glob("detection/kql/*.kql"))
+          if not queries:
+              sys.exit("No KQL queries found")
+          for path in queries:
+              with open(path, encoding="utf-8") as handle:
+                  if not handle.read().strip():
+                      sys.exit(f"{path}: empty")
+              print(f"{path}: ok")
+          PY
