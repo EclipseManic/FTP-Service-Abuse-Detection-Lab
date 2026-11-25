@@ -162,3 +162,5 @@ credential.
 ## License
 
 MIT. Copyright (c) 2026 Eclipsemanic. See [LICENSE](LICENSE).
+
+Part of my [SOC and detection portfolio](https://github.com/EclipseManic). The wider lab and its detection rules are in [SOC-Lab](https://github.com/EclipseManic/SOC-Lab).
