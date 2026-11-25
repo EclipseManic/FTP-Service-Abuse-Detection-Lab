@@ -15,6 +15,18 @@ adapt.
 > harvester, and no execution path. The walkthrough prints what would happen; it
 > does not create files, services, processes, or connections.
 
+## See it run
+
+Below is the real output of `simulation/Invoke-ServiceAbuseWalkthrough.ps1` on
+this machine: 63 lines, no system changes. The plain text is committed at
+[`docs/walkthrough-output.txt`](docs/walkthrough-output.txt).
+
+![Walkthrough output](docs/walkthrough-output.png)
+
+Every push runs the [`Validate`](https://github.com/EclipseManic/FTP-Service-Abuse-Detection-Lab/actions/workflows/validate.yml)
+workflow: it parses both scripts, smoke-runs the walkthrough, and checks that
+each Sigma rule carries a `detection` block and each KQL file is non-empty.
+
 ## What is here
 
 | Path | Purpose |
@@ -24,6 +36,7 @@ adapt.
 | `detection/sigma/` | Sigma rules for service-install and Wi-Fi key-dump indicators |
 | `detection/kql/` | Microsoft Defender / Sentinel queries for the same behaviour |
 | `docs/attack-chain.md` | Phase-by-phase detail, MITRE ATT&CK mapping, event IDs |
+| `docs/walkthrough-output.txt` | Captured output of the walkthrough (also shown above) |
 
 ## The chain
 

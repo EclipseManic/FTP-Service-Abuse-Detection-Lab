@@ -1,0 +1,63 @@
+﻿
+  Windows Service Abuse Detection Lab
+  Simulation only - no system changes are made.
+  No payload, harvester, or execution routine is present.
+------------------------------------------------------------------------
+
+========================================================================
+  Phase 1 - Staging the MSBuild project
+========================================================================
+  What         A .proj file containing an inline C# task is written to a temp directory.
+  Why          MSBuild compiles the task at build time through CodeTaskFactory. No compiler binary is dropped.
+  Artifact     A project file in %TEMP%, often named runner.proj or similar.
+  [DETECT]     Sysmon Event 11 (FileCreate) for a .proj file in a user temp path.
+  [DETECT]     Unexpected msbuild.exe activity on a workstation that does not build software.
+
+========================================================================
+  Phase 2 - Creating the service
+========================================================================
+  What         A service is installed whose binary path starts cmd.exe, then msbuild.exe with the project file.
+  Why          The SCM launches a signed Microsoft binary, and cmd.exe exits immediately while MSBuild keeps running.
+  Tell         The service name imitates a system component; the image path contains msbuild.exe.
+  [DETECT]     System Event 7045 and Security Event 4697: service install with msbuild in ImagePath.
+  [DETECT]     Security Event 4688: services.exe -> cmd.exe -> msbuild.exe.
+
+========================================================================
+  Phase 3 - Proxy execution
+========================================================================
+  What         msbuild.exe compiles and runs the inline C# task outside PowerShell.
+  Why          There is no powershell.exe, so AMSI and Script Block Logging do not see the task.
+  Tell         msbuild.exe with a parent of cmd.exe or services.exe, and a project file in temp.
+  [DETECT]     Sysmon Event 1: unusual parent chain and command line.
+  [DETECT]     Correlate with Event 7045 on the same host within seconds.
+
+========================================================================
+  Phase 4 - Post-exploitation (described, not shipped)
+========================================================================
+  Collection   The original exercise collected local Wi-Fi profiles with netsh and the key=clear parameter.
+  Egress       It uploaded the result to a plain FTP server on port 21.
+  Omitted      The working harvester and upload routine are intentionally not part of this repository.
+  [DETECT]     Security Event 4688 / Sysmon 1: netsh.exe with wlan and key=clear.
+  [DETECT]     Sysmon 3 / DeviceNetworkEvents: outbound TCP 21 from a workstation.
+  [DETECT]     Sysmon 22: DNS query for an unexpected FTP host.
+
+========================================================================
+  Phase 5 - Cleanup and residual evidence
+========================================================================
+  What         The service and staged files are removed.
+  Limit        Service install records, process creation events, prefetch, and the USN journal remain.
+  Gap          A runner log left in temp can outlive the cleanup and preserve the timeline.
+  [DETECT]     Event 7045/4697 and 7036 remain after the service is deleted.
+  [DETECT]     Prefetch: MSBUILD.EXE-*.pf and CMD.EXE-*.pf.
+  [DETECT]     USN journal entries for the project file create and delete.
+
+========================================================================
+  Summary
+------------------------------------------------------------------------
+  Chain     : services.exe -> cmd.exe -> msbuild.exe -> inline C#
+  ATT&CK    : T1543.003 (Windows Service), T1127 (MSBuild), T1005, T1048
+  Best signal: 7045/4697 with msbuild in ImagePath, plus the process chain.
+  Next      : adapt detection/sigma and detection/kql to your environment.
+========================================================================
+
+
