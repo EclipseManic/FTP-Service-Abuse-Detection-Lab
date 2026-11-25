@@ -2,7 +2,7 @@
 
 **A defensive lab for MSBuild inline-C# proxy execution hidden behind a Windows service.**
 
-[![Validate](https://github.com/EclipseManic/service-abuse-detection-lab/actions/workflows/validate.yml/badge.svg)](https://github.com/EclipseManic/service-abuse-detection-lab/actions/workflows/validate.yml)
+[![Validate](https://github.com/EclipseManic/FTP-Service-Abuse-Detection-Lab/actions/workflows/validate.yml/badge.svg)](https://github.com/EclipseManic/FTP-Service-Abuse-Detection-Lab/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 This repository walks through one attack chain end to end — a Windows service
@@ -35,7 +35,7 @@ adapt.
 3. **Proxy execution.** `services.exe` starts `cmd.exe`, which starts the
    signed `msbuild.exe`. The C# task runs inside MSBuild, outside PowerShell
    and its AMSI/script-block telemetry.
-4. **Post-exploitation.** In the original exercise, the task downloaded a
+4. **Post-exploitation.** In the original lab run, the task downloaded a
    payload, collected local credentials, and uploaded the result over FTP. That
    working code is deliberately **not** included here; the walkthrough
    describes the actions and the evidence they leave.
